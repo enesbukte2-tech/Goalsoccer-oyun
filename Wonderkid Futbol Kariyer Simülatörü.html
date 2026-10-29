@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wonderkid - Football Career Simulator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        pitch: '#1b4d3e',
+                        gold: '#fbbf24',
+                        neonGreen: '#10b981',
+                        neonCyan: '#06b6d4',
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .fut-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #fbbf24;
+            box-shadow: 0 10px 25px -5px rgba(251, 191, 36, 0.2);
+        }
+        .gold-glow {
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+        }
+        .neon-glow {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        .pitch-pattern {
+            background-color: #15803d;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.05) 40px, rgba(255,255,255,0.05) 80px);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- MAIN GAME CONTAINER -->
+    <div id="app" class="w-full max-w-7xl mx-auto p-3 sm:p-6 flex-1 flex flex-col">
+
+        <!-- SETUP SCREEN (Start Game) -->
+        <div id="setup-screen" class="flex-1 flex flex-col justify-center items-center py-8">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 px-4 py-1.5 rounded-full text-emerald-400 font-semibold text-sm mb-4">
+                    <i class="fa-solid fa-star text-gold"></i> Wonderkid Career Simulator
+                </div>
+                <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white mb-2">
+                    EFSANENİ <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">YARAT</span>
+                </h1>
+                <p class="text-slate-400 text-sm sm:text-base max-w-md mx-auto">
+                    18 yaşında genç bir yetenek olarak futbol dünyasına adım at. Antrenman yap, maç kazandır, dev kulüplere transfer ol ve Ballon d'Or kazan!
+                </p>
+            </div>
+
+            <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
+                <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl"></div>
+
+                <form id="creation-form" class="space-y-5 relative z-10">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Oyuncu Adı Soyadı</label>
+                        <input type="text" id="player-name" required placeholder="Örn: Arda Güler" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mevki</label>
+                            <select id="player-pos" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition">
+                                <option value="ST">ST (Santrafor)</option>
+                                <option value="CAM" selected>CAM (Ofansif Orta Saha)</option>
+                                <option value="RW">RW (Sağ Kanat)</option>
+                                <option value="LW">LW (Sol Kanat)</option>
+                                <option value="CM">CM (Merkez Orta Saha)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Uyruk</label>
+                            <select id="player-nation" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition">
+                                <option value="🇹🇷 Türkiye">🇹🇷 Türkiye</option>
+                                <option value="🇧🇷 Brezilya">🇧🇷 Brezilya</option>
+                                <option value="🇫🇷 Fransa">🇫🇷 Fransa</option>
+                                <option value="🇪🇸 İspanya">🇪🇸 İspanya</option>
+                                <option value="🇦🇷 Arjantin">🇦🇷 Arjantin</option>
+                                <option value="🇬🇧 İngiltere">🇬🇧 İngiltere</option>
+                                <option value="🇩🇪 Almanya">🇩🇪 Almanya</option>
+                                <option value="🇵🇹 Portekiz">🇵🇹 Portekiz</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Başlangıç Kulübü</label>
+                        <select id="player-club" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition">
+                            <option value="Fenerbahçe SK">Fenerbahçe SK</option>
+                            <option value="Galatasaray SK">Galatasaray SK</option>
+                            <option value="Beşiktaş JK">Beşiktaş JK</option>
+                            <option value="Ajax">Ajax</option>
+                            <option value="SL Benfica">SL Benfica</option>
+                            <option value="Borussia Dortmund">Borussia Dortmund</option>
+                            <option value="Sporting CP">Sporting CP</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 text-base">
+                        Kariyere Başla <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD & GAME UI (Hidden by default) -->
+        <div id="game-dashboard" class="hidden flex-1 flex flex-col gap-6">
+
+            <!-- HEADER / PLAYER TOP BAR -->
+            <header class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg gold-glow">
+                        <span id="top-ovr">68</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 id="top-name" class="font-extrabold text-lg text-white">Oyuncu Adı</h2>
+                            <span id="top-nation" class="text-sm">🇹🇷</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-slate-400 font-medium mt-0.5">
+                            <span><i class="fa-solid fa-shirt text-slate-500 mr-1"></i><span id="top-club">Kulüp</span></span>
+                            <span>•</span>
+                            <span><i class="fa-solid fa-crosshairs text-slate-500 mr-1"></i><span id="top-pos">CAM</span></span>
+                            <span>•</span>
+                            <span>Yaş: <span id="top-age" class="text-white font-semibold">18</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEASON STATUS -->
+                <div class="flex items-center gap-4 bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800/80">
+                    <div class="text-center pr-3 border-r border-slate-800">
+                        <div class="text-[10px] uppercase font-bold text-slate-400">Sezon</div>
+                        <div id="top-season" class="text-sm font-extrabold text-amber-400">2026/27</div>
+                    </div>
+                    <div class="text-center pr-3 border-r border-slate-800">
+                        <div class="text-[10px] uppercase font-bold text-slate-400">Hafta / Maç</div>
+                        <div class="text-sm font-extrabold text-white"><span id="top-match-week">1</span> / 38</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-400">Puan</div>
+                        <div id="top-points" class="text-sm font-extrabold text-emerald-400">0 P</div>
+                    </div>
+                </div>
+
+                <!-- ENERGIES AND MORALE -->
+                <div class="flex items-center gap-4">
+                    <div class="w-28">
+                        <div class="flex justify-between text-xs mb-1 font-semibold">
+                            <span class="text-slate-400"><i class="fa-solid fa-bolt text-amber-400 mr-1"></i>Enerji</span>
+                            <span id="energy-val" class="text-emerald-400">100%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div id="energy-bar" class="bg-emerald-400 h-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <div class="w-28">
+                        <div class="flex justify-between text-xs mb-1 font-semibold">
+                            <span class="text-slate-400"><i class="fa-solid fa-face-smile text-cyan-400 mr-1"></i>Moral</span>
+                            <span id="morale-val" class="text-cyan-400">Yüksek</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div id="morale-bar" class="bg-cyan-400 h-full transition-all duration-300" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- NAVIGATION TABS -->
+            <nav class="flex border-b border-slate-800 overflow-x-auto gap-2 pb-1 scrollbar-none">
+                <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="nav-tab active flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all bg-emerald-500 text-slate-950">
+                    <i class="fa-solid fa-gauge-high"></i> Genel Bakış
+                </button>
+                <button onclick="switchTab('match')" id="tab-btn-match" class="nav-tab flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-futbol"></i> Maç Günü
+                </button>
+                <button onclick="switchTab('training')" id="tab-btn-training" class="nav-tab flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-dumbbell"></i> Antrenman
+                </button>
+                <button onclick="switchTab('transfers')" id="tab-btn-transfers" class="nav-tab flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800 relative">
+                    <i class="fa-solid fa-handshake"></i> Transfer Pazarı
+                    <span id="transfer-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-ping"></span>
+                </button>
+                <button onclick="switchTab('trophies')" id="tab-btn-trophies" class="nav-tab flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-trophy"></i> Müze & Ödüller
+                </button>
+            </nav>
+
+            <!-- TAB CONTENT AREA -->
+            <main class="flex-1">
+
+                <!-- TAB 1: DASHBOARD -->
+                <div id="tab-dashboard" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- FUT CARD / PLAYER SUMMARY -->
+                    <div class="flex flex-col items-center">
+                        <div class="fut-card w-full max-w-xs rounded-2xl p-6 text-center relative overflow-hidden my-auto">
+                            <div class="absolute top-3 left-4 text-left">
+                                <div id="card-ovr" class="text-4xl font-black text-amber-400 leading-none">68</div>
+                                <div id="card-pos" class="text-xs font-bold text-slate-400 uppercase tracking-wider">CAM</div>
+                                <div id="card-nation" class="text-lg mt-1">🇹🇷</div>
+                            </div>
+
+                            <div class="w-28 h-28 mx-auto my-4 rounded-full bg-slate-800/80 border-2 border-amber-400/50 flex items-center justify-center text-5xl text-amber-300 shadow-inner">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+
+                            <h3 id="card-name" class="text-xl font-black text-white truncate px-2">PLAYER NAME</h3>
+                            <p id="card-club" class="text-xs font-semibold text-emerald-400 mb-4">Current Club</p>
+
+                            <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs font-bold border-t border-slate-700/60 pt-4">
+                                <div class="flex justify-between"><span class="text-slate-400">HIZ</span><span id="stat-pac">70</span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">ŞUT</span><span id="stat-sho">65</span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">PAS</span><span id="stat-pas">68</span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">ÇAL</span><span id="stat-dri">72</span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">DEF</span><span id="stat-def">40</span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">FİZ</span><span id="stat-phy">60</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CAREER DETAILS & MARKET INFO -->
+                    <div class="lg:col-span-2 space-y-6">
+                        
+                        <!-- MARKET & FINANCIAL OVERVIEW -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                                <div class="text-xs font-semibold text-slate-400 mb-1"><i class="fa-solid fa-sack-dollar text-emerald-400 mr-1.5"></i>Piyasa Değeri</div>
+                                <div id="dash-val" class="text-xl font-black text-white">€3.5M</div>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                                <div class="text-xs font-semibold text-slate-400 mb-1"><i class="fa-solid fa-money-bill-wave text-cyan-400 mr-1.5"></i>Haftalık Maaş</div>
+                                <div id="dash-wage" class="text-xl font-black text-white">€8,500</div>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                                <div class="text-xs font-semibold text-slate-400 mb-1"><i class="fa-solid fa-chart-line text-amber-400 mr-1.5"></i>Potansiyel Tavanı</div>
+                                <div id="dash-pot" class="text-xl font-black text-amber-400">92 POT</div>
+                            </div>
+                        </div>
+
+                        <!-- SEASON STATS BOARD -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center justify-between">
+                                <span><i class="fa-solid fa-chart-simple text-emerald-400 mr-2"></i>Bu Sezonki Performans</span>
+                                <span class="text-xs text-slate-500 font-normal">Lig + Kupalar</span>
+                            </h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div class="text-2xl font-black text-white" id="season-apps">0</div>
+                                    <div class="text-[11px] text-slate-400 font-semibold mt-0.5">Maç Sayısı</div>
+                                </div>
+                                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div class="text-2xl font-black text-emerald-400" id="season-goals">0</div>
+                                    <div class="text-[11px] text-slate-400 font-semibold mt-0.5">Gol</div>
+                                </div>
+                                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div class="text-2xl font-black text-cyan-400" id="season-assists">0</div>
+                                    <div class="text-[11px] text-slate-400 font-semibold mt-0.5">Asist</div>
+                                </div>
+                                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div class="text-2xl font-black text-amber-400" id="season-rating">0.0</div>
+                                    <div class="text-[11px] text-slate-400 font-semibold mt-0.5">Ort. Maç Puanı</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NEXT FIXTURE CARD -->
+                        <div class="bg-gradient-to-r from-slate-900 to-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-center text-emerald-400 text-xl font-bold">
+                                    <i class="fa-solid fa-calendar-day"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-400 font-bold uppercase">Sıradaki Maç</div>
+                                    <div class="text-lg font-black text-white" id="next-opponent">vs. Rakip Takım</div>
+                                </div>
+                            </div>
+                            <button onclick="switchTab('match')" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20">
+                                Maç Odasına Git <i class="fa-solid fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- TAB 2: MATCH DAY -->
+                <div id="tab-match" class="tab-content hidden space-y-6">
+                    
+                    <!-- PITCH / SCOREBOARD CONTAINER -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                        
+                        <!-- MATCH SCOREBAR -->
+                        <div class="bg-slate-950 px-6 py-4 flex items-center justify-between border-b border-slate-800">
+                            <div class="flex items-center gap-3 w-1/3">
+                                <span class="font-extrabold text-sm sm:text-lg text-white truncate" id="home-team-name">KULÜBÜN</span>
+                            </div>
+
+                            <div class="flex flex-col items-center">
+                                <div class="bg-slate-900 border border-slate-800 px-4 py-1 rounded-lg text-2xl font-black text-amber-400 tracking-wider font-mono">
+                                    <span id="score-home">0</span> - <span id="score-away">0</span>
+                                </div>
+                                <div class="text-[11px] font-bold text-emerald-400 mt-1 flex items-center gap-1">
+                                    <i class="fa-solid fa-clock animate-pulse"></i> <span id="match-timer">0'</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-end gap-3 w-1/3 text-right">
+                                <span class="font-extrabold text-sm sm:text-lg text-white truncate" id="away-team-name">RAKİP</span>
+                            </div>
+                        </div>
+
+                        <!-- VISUAL PITCH DISPLAY -->
+                        <div class="pitch-pattern h-48 sm:h-64 relative flex items-center justify-center p-4 overflow-hidden border-b border-slate-800">
+                            <!-- Field Markings -->
+                            <div class="absolute inset-4 border-2 border-white/20 pointer-events-none"></div>
+                            <div class="absolute top-4 bottom-4 left-1/2 -translate-x-1/2 w-0 border-r-2 border-white/20 pointer-events-none"></div>
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/20 rounded-full pointer-events-none"></div>
+
+                            <!-- Dynamic Pitch Event Badge -->
+                            <div id="pitch-status" class="bg-slate-950/90 backdrop-blur border border-amber-400/40 px-6 py-3 rounded-2xl text-center shadow-2xl z-10 max-w-md">
+                                <div id="pitch-status-title" class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-1">Maç Öncesi</div>
+                                <div id="pitch-status-desc" class="text-sm font-extrabold text-white">Hazırsan maçı başlat!</div>
+                            </div>
+                        </div>
+
+                        <!-- LIVE COMMENTARY LOG -->
+                        <div class="p-4 bg-slate-950/60 max-h-40 overflow-y-auto space-y-2 border-b border-slate-800 text-xs font-medium font-mono" id="match-commentary">
+                            <div class="text-slate-500 text-center italic py-2">Hakem düdüğünü çalmak üzere...</div>
+                        </div>
+
+                        <!-- DECISION / ACTION CONTROLS -->
+                        <div class="p-5 bg-slate-900 flex flex-wrap items-center justify-center gap-4">
+                            
+                            <!-- Pre-Match Start Button -->
+                            <button id="btn-start-match" onclick="startMatchSimulation()" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black px-8 py-3.5 rounded-xl transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play"></i> MAÇI BAŞLAT
+                            </button>
+
+                            <!-- In-Game Decision Buttons (Hidden by default) -->
+                            <div id="match-decision-controls" class="hidden w-full flex flex-wrap justify-center gap-3">
+                                <button onclick="makeMatchDecision('shoot')" class="flex-1 min-w-[120px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 px-4 rounded-xl transition flex flex-col items-center gap-1 shadow-lg shadow-amber-500/20">
+                                    <i class="fa-solid fa-bullseye text-lg"></i>
+                                    <span>ŞUT AT</span>
+                                </button>
+                                <button onclick="makeMatchDecision('pass')" class="flex-1 min-w-[120px] bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black py-3 px-4 rounded-xl transition flex flex-col items-center gap-1 shadow-lg shadow-cyan-500/20">
+                                    <i class="fa-solid fa-share text-lg"></i>
+                                    <span>PAS VER</span>
+                                </button>
+                                <button onclick="makeMatchDecision('dribble')" class="flex-1 min-w-[120px] bg-purple-500 hover:bg-purple-400 text-white font-black py-3 px-4 rounded-xl transition flex flex-col items-center gap-1 shadow-lg shadow-purple-500/20">
+                                    <i class="fa-solid fa-bolt text-lg"></i>
+                                    <span>ÇALIM AT</span>
+                                </button>
+                            </div>
+
+                            <!-- Post-Match Continue Button -->
+                            <button id="btn-finish-match" onclick="finishMatchDay()" class="hidden w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white font-bold px-8 py-3.5 rounded-xl transition flex items-center justify-center gap-2">
+                                Haftayı Tamamla <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- TAB 3: TRAINING -->
+                <div id="tab-training" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-black text-white">Haftalık Antrenman Programı</h3>
+                                <p class="text-xs text-slate-400">Her antrenman seansı belirli özelliklerini geliştirir ancak enerji tüketir.</p>
+                            </div>
+                            <div class="bg-slate-950 border border-slate-800 px-4 py-2 rounded-xl text-xs font-bold text-slate-300">
+                                <i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Kalan Enerji: <span id="train-energy-val" class="text-emerald-400">100%</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            
+                            <!-- Drill 1 -->
+                            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/50 transition flex flex-col justify-between">
+                                <div>
+                                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl mb-3">
+                                        <i class="fa-solid fa-bullseye"></i>
+                                    </div>
+                                    <h4 class="font-extrabold text-white text-base">Bitiricilik & Şut İdmanı</h4>
+                                    <p class="text-xs text-slate-400 mt-1">Ceza sahası dışı şut ve bitiricilik geliştirme.</p>
+                                    <div class="my-4 space-y-1">
+                                        <div class="text-xs font-bold text-emerald-400">+1.5 Şut Artışı</div>
+                                        <div class="text-xs font-bold text-amber-400">-15% Enerji</div>
+                                    </div>
+                                </div>
+                                <button onclick="doTraining('Shooting', 15, 1.5)" class="w-full bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-white font-bold py-2.5 rounded-xl transition">
+                                    Antrenmanı Yap
+                                </button>
+                            </div>
+
+                            <!-- Drill 2 -->
+                            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/50 transition flex flex-col justify-between">
+                                <div>
+                                    <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-xl mb-3">
+                                        <i class="fa-solid fa-person-running"></i>
+                                    </div>
+                                    <h4 class="font-extrabold text-white text-base">Sprint & Kondisyon</h4>
+                                    <p class="text-xs text-slate-400 mt-1">Patlayıcı güç ve topsuz alanda hız çalışmaları.</p>
+                                    <div class="my-4 space-y-1">
+                                        <div class="text-xs font-bold text-emerald-400">+1.5 Hız Artışı</div>
+                                        <div class="text-xs font-bold text-amber-400">-20% Enerji</div>
+                                    </div>
+                                </div>
+                                <button onclick="doTraining('Pace', 20, 1.5)" class="w-full bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-white font-bold py-2.5 rounded-xl transition">
+                                    Antrenmanı Yap
+                                </button>
+                            </div>
+
+                            <!-- Drill 3 -->
+                            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/50 transition flex flex-col justify-between">
+                                <div>
+                                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl mb-3">
+                                        <i class="fa-solid fa-diagram-project"></i>
+                                    </div>
+                                    <h4 class="font-extrabold text-white text-base">Pas & Vizyon Çalışması</h4>
+                                    <p class="text-xs text-slate-400 mt-1">Kısa ve uzun pas hassasiyetini üst seviyeye çıkar.</p>
+                                    <div class="my-4 space-y-1">
+                                        <div class="text-xs font-bold text-emerald-400">+1.5 Pas Artışı</div>
+                                        <div class="text-xs font-bold text-amber-400">-15% Enerji</div>
+                                    </div>
+                                </div>
+                                <button onclick="doTraining('Passing', 15, 1.5)" class="w-full bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-white font-bold py-2.5 rounded-xl transition">
+                                    Antrenmanı Yap
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <!-- REST BUTTON -->
+                        <div class="mt-6 border-t border-slate-800 pt-6 flex justify-end">
+                            <button onclick="restPlayer()" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-bold px-6 py-3 rounded-xl transition flex items-center gap-2">
+                                <i class="fa-solid fa-bed"></i> Dinlen (+25% Enerji Kazan)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: TRANSFERS -->
+                <div id="tab-transfers" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-lg font-black text-white">Transfer Pazarı & Gelen Teklifler</h3>
+                                <p class="text-xs text-slate-400">Performansın yükseldikçe Avrupa'nın dev kulüplerinden resmi teklifler alırsın.</p>
+                            </div>
+                            <span class="text-xs bg-emerald-500/10 text-emerald-400 font-bold px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                                Transfer Dönemi Açık
+                            </span>
+                        </div>
+
+                        <div id="transfer-offers-list" class="space-y-4">
+                            <!-- Transfer Offer Cards dynamically inserted -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: TROPHIES & AWARDS -->
+                <div id="tab-trophies" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                        <h3 class="text-lg font-black text-white mb-6">Kariyer Müzesi & Başarılar</h3>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            
+                            <!-- Trophy 1 -->
+                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center">
+                                <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-3xl">
+                                    <i class="fa-solid fa-trophy"></i>
+                                </div>
+                                <div class="text-2xl font-black text-white" id="trophy-league">0</div>
+                                <div class="text-xs font-semibold text-slate-400 mt-1">Lig Şampiyonluğu</div>
+                            </div>
+
+                            <!-- Trophy 2 -->
+                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center">
+                                <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-3xl">
+                                    <i class="fa-solid fa-award"></i>
+                                </div>
+                                <div class="text-2xl font-black text-white" id="trophy-cup">0</div>
+                                <div class="text-xs font-semibold text-slate-400 mt-1">Ulusal Kupa</div>
+                            </div>
+
+                            <!-- Trophy 3 -->
+                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center">
+                                <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-3xl">
+                                    <i class="fa-solid fa-futbol"></i>
+                                </div>
+                                <div class="text-2xl font-black text-white" id="trophy-goldenboot">0</div>
+                                <div class="text-xs font-semibold text-slate-400 mt-1">Altın Ayakkabı</div>
+                            </div>
+
+                            <!-- Trophy 4 -->
+                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center">
+                                <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center text-3xl gold-glow">
+                                    <i class="fa-solid fa-star"></i>
+                                </div>
+                                <div class="text-2xl font-black text-amber-400" id="trophy-ballondor">0</div>
+                                <div class="text-xs font-bold text-amber-300 mt-1">Ballon d'Or</div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT GAME ENGINE LOGIC -->
+    <script>
+        // GAME STATE
+        let player = {
+            name: '',
+            position: 'CAM',
+            nationality: '🇹🇷 Türkiye',
+            club: 'Fenerbahçe SK',
+            age: 18,
+            seasonYear: 2026,
+            matchWeek: 1,
+            leaguePoints: 0,
+            
+            // Core Attributes
+            stats: {
+                pace: 72,
+                shooting: 66,
+                passing: 70,
+                dribbling: 74,
+                defense: 42,
+                physical: 62
+            },
+            ovr: 68,
+            potential: 92,
+            
+            // Vitals
+            energy: 100,
+            morale: 'Yüksek', // Düşük, Normal, Yüksek
+            
+            // Financials
+            marketValue: 3500000, // €
+            weeklyWage: 8500, // €
+            
+            // Stats history
+            seasonGoals: 0,
+            seasonAssists: 0,
+            seasonApps: 0,
+            seasonRatings: [],
+            
+            // Trophies
+            trophies: {
+                league: 0,
+                cup: 0,
+                goldenBoot: 0,
+                ballonDor: 0
+            }
+        };
+
+        // TEAMS DATABASE FOR TRANSFERS & MATCHES
+        const teamsDb = [
+            { name: 'Fenerbahçe SK', tier: 1, minOvr: 65 },
+            { name: 'Galatasaray SK', tier: 1, minOvr: 65 },
+            { name: 'Beşiktaş JK', tier: 1, minOvr: 65 },
+            { name: 'Ajax', tier: 2, minOvr: 72 },
+            { name: 'SL Benfica', tier: 2, minOvr: 73 },
+            { name: 'Borussia Dortmund', tier: 2, minOvr: 76 },
+            { name: 'RB Leipzig', tier: 2, minOvr: 77 },
+            { name: 'Arsenal', tier: 3, minOvr: 82 },
+            { name: 'FC Barcelona', tier: 3, minOvr: 84 },
+            { name: 'Real Madrid', tier: 3, minOvr: 86 },
+            { name: 'Manchester City', tier: 3, minOvr: 87 }
+        ];
+
+        // MATCH STATE
+        let currentMatch = {
+            active: false,
+            homeTeam: '',
+            awayTeam: '',
+            homeScore: 0,
+            awayScore: 0,
+            minute: 0,
+            interval: null,
+            playerGoals: 0,
+            playerAssists: 0,
+            playerRating: 6.0,
+            awaitingDecision: false
+        };
+
+        // SETUP FORM SUBMISSION
+        document.getElementById('creation-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            player.name = document.getElementById('player-name').value;
+            player.position = document.getElementById('player-pos').value;
+            player.nationality = document.getElementById('player-nation').value;
+            player.club = document.getElementById('player-club').value;
+
+            calculateOVR();
+            updateUI();
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-dashboard').classList.remove('hidden');
+
+            showToast(`Kariyerin başladı! Bol şans ${player.name}`, 'success');
+        });
+
+        // CALCULATE OVERALL RATING BASED ON POSITION
+        function calculateOVR() {
+            const s = player.stats;
+            let ovr = 0;
+
+            if (player.position === 'ST') {
+                ovr = (s.shooting * 0.4) + (s.pace * 0.25) + (s.dribbling * 0.2) + (s.physical * 0.15);
+            } else if (player.position === 'CAM') {
+                ovr = (s.passing * 0.35) + (s.dribbling * 0.35) + (s.shooting * 0.2) + (s.pace * 0.1);
+            } else if (player.position === 'RW' || player.position === 'LW') {
+                ovr = (s.pace * 0.4) + (s.dribbling * 0.3) + (s.shooting * 0.2) + (s.passing * 0.1);
+            } else if (player.position === 'CM') {
+                ovr = (s.passing * 0.35) + (s.physical * 0.25) + (s.dribbling * 0.2) + (s.defense * 0.2);
+            }
+
+            player.ovr = Math.min(99, Math.round(ovr));
+            player.marketValue = Math.round(Math.pow(player.ovr - 50, 2.8) * 1500);
+            player.weeklyWage = Math.round(player.marketValue * 0.003);
+        }
+
+        // UPDATE UI ELEMENTS
+        function updateUI() {
+            // Header
+            document.getElementById('top-ovr').innerText = player.ovr;
+            document.getElementById('top-name').innerText = player.name;
+            document.getElementById('top-nation').innerText = player.nationality.split(' ')[0];
+            document.getElementById('top-club').innerText = player.club;
+            document.getElementById('top-pos').innerText = player.position;
+            document.getElementById('top-age').innerText = player.age;
+            document.getElementById('top-season').innerText = `${player.seasonYear}/${(player.seasonYear + 1).toString().slice(2)}`;
+            document.getElementById('top-match-week').innerText = player.matchWeek;
+            document.getElementById('top-points').innerText = `${player.leaguePoints} P`;
+
+            // Energy & Morale
+            document.getElementById('energy-val').innerText = `${player.energy}%`;
+            document.getElementById('energy-bar').style.width = `${player.energy}%`;
+            document.getElementById('train-energy-val').innerText = `${player.energy}%`;
+
+            document.getElementById('morale-val').innerText = player.morale;
+
+            // FUT Card
+            document.getElementById('card-ovr').innerText = player.ovr;
+            document.getElementById('card-pos').innerText = player.position;
+            document.getElementById('card-nation').innerText = player.nationality.split(' ')[0];
+            document.getElementById('card-name').innerText = player.name.toUpperCase();
+            document.getElementById('card-club').innerText = player.club;
+
+            document.getElementById('stat-pac').innerText = Math.round(player.stats.pace);
+            document.getElementById('stat-sho').innerText = Math.round(player.stats.shooting);
+            document.getElementById('stat-pas').innerText = Math.round(player.stats.passing);
+            document.getElementById('stat-dri').innerText = Math.round(player.stats.dribbling);
+            document.getElementById('stat-def').innerText = Math.round(player.stats.defense);
+            document.getElementById('stat-phy').innerText = Math.round(player.stats.physical);
+
+            // Financials
+            document.getElementById('dash-val').innerText = `€${(player.marketValue / 1000000).toFixed(1)}M`;
+            document.getElementById('dash-wage').innerText = `€${player.weeklyWage.toLocaleString()}`;
+            document.getElementById('dash-pot').innerText = `${player.potential} POT`;
+
+            // Season Stats
+            document.getElementById('season-apps').innerText = player.seasonApps;
+            document.getElementById('season-goals').innerText = player.seasonGoals;
+            document.getElementById('season-assists').innerText = player.seasonAssists;
+            
+            const avgRating = player.seasonRatings.length > 0 
+                ? (player.seasonRatings.reduce((a, b) => a + b, 0) / player.seasonRatings.length).toFixed(1)
+                : '0.0';
+            document.getElementById('season-rating').innerText = avgRating;
+
+            // Trophies
+            document.getElementById('trophy-league').innerText = player.trophies.league;
+            document.getElementById('trophy-cup').innerText = player.trophies.cup;
+            document.getElementById('trophy-goldenboot').innerText = player.trophies.goldenBoot;
+            document.getElementById('trophy-ballondor').innerText = player.trophies.ballonDor;
+
+            // Next Opponent
+            const opponent = getNextOpponent();
+            document.getElementById('next-opponent').innerText = `vs. ${opponent}`;
+            document.getElementById('home-team-name').innerText = player.club.toUpperCase();
+            document.getElementById('away-team-name').innerText = opponent.toUpperCase();
+
+            // Refresh Transfer offers list
+            renderTransferOffers();
+        }
+
+        // NAVIGATION TAB SWITCHER
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(el => {
+                el.classList.remove('bg-emerald-500', 'text-slate-950');
+                el.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.add('bg-emerald-500', 'text-slate-950');
+            activeBtn.classList.remove('text-slate-400');
+        }
+
+        // RANDOM OPPONENT GENERATOR
+        function getNextOpponent() {
+            const opps = teamsDb.filter(t => t.name !== player.club);
+            const index = (player.matchWeek * 3) % opps.length;
+            return opps[index].name;
+        }
+
+        // TRAINING SYSTEM
+        function doTraining(type, energyCost, statGain) {
+            if (player.energy < energyCost) {
+                showToast('Antrenman yapmak için yeterli enerjin yok! Dinlenmelisin.', 'error');
+                return;
+            }
+
+            player.energy -= energyCost;
+
+            if (type === 'Shooting') player.stats.shooting = Math.min(99, player.stats.shooting + statGain);
+            if (type === 'Pace') player.stats.pace = Math.min(99, player.stats.pace + statGain);
+            if (type === 'Passing') player.stats.passing = Math.min(99, player.stats.passing + statGain);
+
+            calculateOVR();
+            updateUI();
+            showToast(`${type} idmanı tamamlandı! (+${statGain} Artış)`, 'success');
+        }
+
+        function restPlayer() {
+            if (player.energy >= 100) {
+                showToast('Enerjin zaten full!', 'info');
+                return;
+            }
+            player.energy = Math.min(100, player.energy + 25);
+            updateUI();
+            showToast('İyi bir uyku çektin. Enerjin yenilendi (+25%)', 'success');
+        }
+
+        // MATCH DAY ENGINE
+        function startMatchSimulation() {
+            if (player.energy < 20) {
+                showToast('Maça çıkmak için en az %20 enerji gerekiyor!', 'error');
+                return;
+            }
+
+            document.getElementById('btn-start-match').classList.add('hidden');
+            document.getElementById('match-commentary').innerHTML = '';
+            
+            currentMatch = {
+                active: true,
+                homeTeam: player.club,
+                awayTeam: getNextOpponent(),
+                homeScore: 0,
+                awayScore: 0,
+                minute: 0,
+                playerGoals: 0,
+                playerAssists: 0,
+                playerRating: 6.0,
+                awaitingDecision: false
+            };
+
+            document.getElementById('score-home').innerText = '0';
+            document.getElementById('score-away').innerText = '0';
+
+            appendCommentary("0'", "Hakem başlama düdüğünü çaldı! Maç başladı.");
+
+            currentMatch.interval = setInterval(simulateMatchTick, 300);
+        }
+
+        function simulateMatchTick() {
+            if (!currentMatch.active || currentMatch.awaitingDecision) return;
+
+            currentMatch.minute += 3;
+            document.getElementById('match-timer').innerText = `${currentMatch.minute}'`;
+
+            // Chance for Key Decision Event
+            if (Math.random() < 0.22 && currentMatch.minute > 15 && currentMatch.minute < 85) {
+                triggerMatchDecision();
+                return;
+            }
+
+            // General Random Match Events
+            if (Math.random() < 0.15) {
+                if (Math.random() < 0.5) {
+                    currentMatch.homeScore++;
+                    document.getElementById('score-home').innerText = currentMatch.homeScore;
+                    appendCommentary(`${currentMatch.minute}'`, `GOL! ${currentMatch.homeTeam} öne geçiyor!`);
+                } else {
+                    currentMatch.awayScore++;
+                    document.getElementById('score-away').innerText = currentMatch.awayScore;
+                    appendCommentary(`${currentMatch.minute}'`, `GOL! ${currentMatch.awayTeam} ağları havalandırdı.`);
+                }
+            }
+
+            // Match Ends
+            if (currentMatch.minute >= 90) {
+                clearInterval(currentMatch.interval);
+                endMatchSimulation();
+            }
+        }
+
+        function triggerMatchDecision() {
+            currentMatch.awaitingDecision = true;
+            document.getElementById('pitch-status-title').innerText = `KİLİT AN! (${currentMatch.minute}')`;
+            document.getElementById('pitch-status-desc').innerText = "Ceza sahası çevresinde topla buluştun! Ne yapacaksın?";
+            document.getElementById('match-decision-controls').classList.remove('hidden');
+        }
+
+        function makeMatchDecision(action) {
+            document.getElementById('match-decision-controls').classList.add('hidden');
+            currentMatch.awaitingDecision = false;
+
+            let successProb = 0.5;
+            if (action === 'shoot') successProb = player.stats.shooting / 110;
+            if (action === 'pass') successProb = player.stats.passing / 105;
+            if (action === 'dribble') successProb = player.stats.dribbling / 108;
+
+            if (Math.random() < successProb) {
+                // SUCCESS
+                if (action === 'shoot') {
+                    currentMatch.homeScore++;
+                    currentMatch.playerGoals++;
+                    currentMatch.playerRating += 1.2;
+                    document.getElementById('score-home').innerText = currentMatch.homeScore;
+                    appendCommentary(`${currentMatch.minute}'`, `HARİKA GOL! ${player.name} inanılmaz bir şutla topu ağlara gönderdi! 🔥`);
+                    document.getElementById('pitch-status-desc').innerText = "GOL! Muhteşem bir vuruş!";
+                } else if (action === 'pass') {
+                    currentMatch.homeScore++;
+                    currentMatch.playerAssists++;
+                    currentMatch.playerRating += 0.9;
+                    document.getElementById('score-home').innerText = currentMatch.homeScore;
+                    appendCommentary(`${currentMatch.minute}'`, `ASİST! ${player.name} adrese teslim pas verdi, takım arkadaşı golü attı! 🎯`);
+                    document.getElementById('pitch-status-desc').innerText = "ASİST! Mükemmel vizyon!";
+                } else {
+                    currentMatch.playerRating += 0.6;
+                    appendCommentary(`${currentMatch.minute}'`, `ŞIK ÇALIM! ${player.name} rakibini ekarte etti ve oyunu açtı! ✨`);
+                    document.getElementById('pitch-status-desc').innerText = "Harika çalım!";
+                }
+            } else {
+                // FAIL
+                currentMatch.playerRating -= 0.3;
+                appendCommentary(`${currentMatch.minute}'`, `${player.name} pozisyondan yararlanamadı, savunma topu uzaklaştırdı.`);
+                document.getElementById('pitch-status-desc').innerText = "Top kaybı yaşandı.";
+            }
+        }
+
+        function endMatchSimulation() {
+            currentMatch.active = false;
+            document.getElementById('pitch-status-title').innerText = "MAÇ BİTTİ";
+            document.getElementById('pitch-status-desc').innerText = `Skor: ${currentMatch.homeScore} - ${currentMatch.awayScore}`;
+
+            // Calculate XP / Rating
+            const finalRating = Math.min(10.0, Math.max(5.0, currentMatch.playerRating)).toFixed(1);
+            player.seasonApps++;
+            player.seasonGoals += currentMatch.playerGoals;
+            player.seasonAssists += currentMatch.playerAssists;
+            player.seasonRatings.push(parseFloat(finalRating));
+
+            // Energy & Morale deduction
+            player.energy = Math.max(0, player.energy - 25);
+
+            // League points update
+            if (currentMatch.homeScore > currentMatch.awayScore) {
+                player.leaguePoints += 3;
+            } else if (currentMatch.homeScore === currentMatch.awayScore) {
+                player.leaguePoints += 1;
+            }
+
+            // Stat growth bonus from performance
+            if (parseFloat(finalRating) >= 8.0) {
+                player.stats.shooting = Math.min(99, player.stats.shooting + 0.3);
+                player.stats.dribbling = Math.min(99, player.stats.dribbling + 0.3);
+                calculateOVR();
+            }
+
+            appendCommentary("90'", `Maç Sonucu: Maç Puanın: ${finalRating}`);
+            document.getElementById('btn-finish-match').classList.remove('hidden');
+
+            confetti({
+                particleCount: 50,
+                spread: 60,
+                origin: { y: 0.7 }
+            });
+        }
+
+        function finishMatchDay() {
+            document.getElementById('btn-finish-match').classList.add('hidden');
+            document.getElementById('btn-start-match').classList.remove('hidden');
+
+            player.matchWeek++;
+
+            // End of Season Check (38 Weeks)
+            if (player.matchWeek > 38) {
+                endSeason();
+            } else {
+                updateUI();
+                switchTab('dashboard');
+                showToast('Hafta tamamlandı! Yeni haftaya geçildi.', 'info');
+            }
+        }
+
+        function endSeason() {
+            player.age++;
+            player.seasonYear++;
+            player.matchWeek = 1;
+
+            // Awards evaluation
+            let awardsText = [];
+            if (player.seasonGoals >= 20) {
+                player.trophies.goldenBoot++;
+                awardsText.push("🏆 ALTIN AYAKKABI kazandın!");
+            }
+            if (player.leaguePoints >= 75) {
+                player.trophies.league++;
+                awardsText.push("🏆 LİG ŞAMPİYONU oldunuz!");
+            }
+            if (player.ovr >= 85 && Math.random() < 0.6) {
+                player.trophies.ballonDor++;
+                awardsText.push("⭐ BALLON D'OR KAZANDIN! BÜYÜK EFSANE!");
+            }
+
+            // Reset season stats
+            player.seasonGoals = 0;
+            player.seasonAssists = 0;
+            player.seasonApps = 0;
+            player.seasonRatings = [];
+            player.leaguePoints = 0;
+
+            updateUI();
+            switchTab('dashboard');
+
+            alert(`SEZON BİTTİ!\n\nYeni Yaş: ${player.age}\n${awardsText.join('\n') || 'Sezonu kupasız tamamladın.'}`);
+        }
+
+        // TRANSFER ENGINE
+        function renderTransferOffers() {
+            const container = document.getElementById('transfer-offers-list');
+            container.innerHTML = '';
+
+            // Generate available transfer offers based on OVR
+            const eligibleClubs = teamsDb.filter(t => t.name !== player.club && player.ovr >= t.minOvr - 2);
+
+            if (eligibleClubs.length === 0) {
+                container.innerHTML = `<div class="text-center text-slate-500 py-8 text-sm">Şu an için resmi bir transfer teklifi yok. Reytingini yükseltmeye devam et!</div>`;
+                document.getElementById('transfer-badge').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('transfer-badge').classList.remove('hidden');
+
+            eligibleClubs.slice(0, 3).forEach(club => {
+                const offerWage = Math.round(player.weeklyWage * (1.2 + Math.random() * 0.4));
+                const offerVal = Math.round(player.marketValue * 1.1);
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-black text-white text-lg">${club.name}</h4>
+                            <span class="text-[10px] bg-amber-400/10 text-amber-400 border border-amber-400/20 px-2 py-0.5 rounded font-bold">TEKLİF</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Bonservis: <span class="text-white font-bold">€${(offerVal/1000000).toFixed(1)}M</span> | Maaş: <span class="text-emerald-400 font-bold">€${offerWage.toLocaleString()}/hafta</span></p>
+                    </div>
+                    <button onclick="acceptTransfer('${club.name}', ${offerWage})" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-extrabold px-5 py-2.5 rounded-xl hover:from-emerald-400 hover:to-teal-400 transition shadow-lg shadow-emerald-500/20">
+                        Teklifi Kabul Et
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function acceptTransfer(newClub, newWage) {
+            player.club = newClub;
+            player.weeklyWage = newWage;
+            updateUI();
+            showToast(`${newClub} takımına transfer oldun! Tebrikler! 🎉`, 'success');
+            
+            confetti({
+                particleCount: 80,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+        }
+
+        // COMMENTARY LOG HELPER
+        function appendCommentary(time, text) {
+            const log = document.getElementById('match-commentary');
+            const item = document.createElement('div');
+            item.className = "flex gap-2 text-slate-300";
+            item.innerHTML = `<span class="text-amber-400 font-bold">${time}</span> <span>${text}</span>`;
+            log.prepend(item);
+        }
+
+        // TOAST NOTIFICATION SYSTEM
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-900 border-slate-700 text-white';
+            if (type === 'success') bg = 'bg-emerald-950 border-emerald-500/50 text-emerald-300';
+            if (type === 'error') bg = 'bg-rose-950 border-rose-500/50 text-rose-300';
+
+            toast.className = `${bg} border p-4 rounded-xl shadow-2xl text-xs font-bold pointer-events-auto flex items-center justify-between transition-all duration-300 opacity-0 transform translate-y-2`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
